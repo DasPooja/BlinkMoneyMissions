@@ -3,7 +3,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Ionicons } from "@expo/vector-icons";
 
 const COLORS = {
   background: "#080C08",
@@ -15,86 +15,89 @@ const COLORS = {
 function CustomTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
 
-const visibleRoutes = state.routes.filter(
-  (route: any) => route.name !== "explore"
-);
+  const visibleRoutes = state.routes.filter(
+    (route: any) => route.name !== "explore"
+  );
+
   return (
-    <View
-      style={[
-        styles.tabBarContainer,
-        {
-          bottom: Math.max(insets.bottom, 10),
-        },
-      ]}
-    >
-      {visibleRoutes.map((route: any) => {
-        const { options } = descriptors[route.key];
+    <View style={styles.tabBarContainer}>
+      <View
+        style={[
+          styles.navPill,
+          {
+            marginBottom: Math.max(insets.bottom, 4),
+          },
+        ]}
+      >
+        {visibleRoutes.map((route: any) => {
+          const { options } = descriptors[route.key];
 
-        const routeIndex = state.routes.findIndex(
-          (item: any) => item.key === route.key
-        );
+          const routeIndex = state.routes.findIndex(
+            (item: any) => item.key === route.key
+          );
 
-        const isFocused = state.index === routeIndex;
+          const isFocused = state.index === routeIndex;
 
-        const label =
-          options.tabBarLabel !== undefined
-            ? options.tabBarLabel
-            : options.title !== undefined
-              ? options.title
-              : route.name;
+          const label =
+            options.tabBarLabel !== undefined
+              ? options.tabBarLabel
+              : options.title !== undefined
+                ? options.title
+                : route.name;
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
+          const onPress = () => {
+            const event = navigation.emit({
+              type: "tabPress",
+              target: route.key,
+              canPreventDefault: true,
+            });
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        let iconName = "house.fill";
-
-        if (route.name === "missions") {
-          iconName = "target";
-        }
-
-        if (route.name === "rewards") {
-          iconName = "gift.fill";
-        }
-
-        return (
-          <Pressable
-            key={route.key}
-            onPress={onPress}
-            style={[
-              styles.tabItem,
-              isFocused && styles.activeTabItem,
-            ]}
-          >
-            <IconSymbol
-              size={22}
-              name={iconName as any}
-              color={isFocused ? COLORS.background : COLORS.inactive}
-            />
-
-            <Text
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
               style={[
-                styles.tabLabel,
-                {
-                  color: isFocused
-                    ? COLORS.background
-                    : COLORS.inactive,
-                },
+                styles.tabItem,
+                isFocused && styles.activeTabItem,
               ]}
             >
-              {label}
-            </Text>
-          </Pressable>
-        );
-      })}
+              <Ionicons
+                name={
+                  route.name === "index"
+                    ? "home-outline"
+                    : route.name === "missions"
+                      ? "layers-outline"
+                      : "gift-outline"
+                }
+                size={20}
+                color={
+                  isFocused
+                    ? COLORS.background
+                    : COLORS.inactive
+                }
+              />
+
+              <Text
+                style={[
+                  styles.tabLabel,
+                  {
+                    color: isFocused
+                      ? COLORS.background
+                      : COLORS.inactive,
+                  },
+                ]}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -141,11 +144,23 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBarContainer: {
     position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
 
-    left: 15,
-    right: 15,
+    height: 92,
 
-    height: 60,
+    backgroundColor: COLORS.background,
+
+    alignItems: "center",
+    justifyContent: "flex-end",
+
+    paddingHorizontal: 24,
+  },
+
+  navPill: {
+    width: "100%",
+    height: 55,
 
     flexDirection: "row",
     alignItems: "center",
@@ -158,20 +173,12 @@ const styles = StyleSheet.create({
     borderRadius: 32,
 
     paddingHorizontal: 4,
-
-    elevation: 0,
-    shadowOpacity: 0,
   },
 
   tabItem: {
     flex: 1,
-
-    height: 50,
-
-    marginHorizontal: 0,
-
-    borderRadius: 30,
-
+    height: 44,
+    borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
 
@@ -183,7 +190,8 @@ const styles = StyleSheet.create({
   },
 
   tabLabel: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 10,
+    fontWeight: "500",
+    marginTop: 1,
   },
 });

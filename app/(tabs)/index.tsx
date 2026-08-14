@@ -1,12 +1,58 @@
+import AppHeader from "@/components/AppHeader";
+import { missions } from "@/data/missions";
+import { useMissionProgress } from "@/hooks/useMissionProgress";
+import { useRouter } from "expo-router";
 import {
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 
 export default function HomeScreen() {
+  const router = useRouter();
+
+  const activeMission = missions.find(
+    (mission) => mission.status === "active"
+  );
+  
+  const { 
+    progress: missionProgress,
+    isLoading,
+  } = useMissionProgress(
+    activeMission?.id ?? "",
+    activeMission?.totalDays ?? 0
+  );
+
+  const handleHelp = async () => {
+    const message =
+      "Hi BlinkMoney Support!\nI need help in BlinkMoney chat";
+
+    const whatsappUrl =
+      `whatsapp://send?text=${encodeURIComponent(message)}`;
+
+    try {
+      await Linking.openURL(whatsappUrl);
+    } catch (error) {
+      console.error(
+        "Unable to open WhatsApp:",
+        error
+      );
+    }
+  };
+
+  if (isLoading || !activeMission) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>
+          Loading...
+        </Text>
+      </View>
+    );
+  } 
+
   return (
     <ScrollView
       style={styles.container}
@@ -14,17 +60,7 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Hello Pooja</Text>
-          <Text style={styles.welcome}>Welcome!</Text>
-        </View>
-
-        <Pressable style={styles.helpButton}>
-          <Text style={styles.helpIcon}>?</Text>
-          <Text style={styles.helpText}>Help</Text>
-        </Pressable>
-      </View>
+      <AppHeader />
 
       {/* Main Mission Card */}
       <View style={styles.missionCard}>
@@ -39,7 +75,9 @@ export default function HomeScreen() {
 
           <View style={styles.streakBadge}>
             <Text style={styles.streakIcon}>🔥</Text>
-            <Text style={styles.streakText}>5 days</Text>
+            <Text style={styles.streakText}>
+              {missionProgress.completedDays} days
+            </Text>
           </View>
         </View>
 
@@ -50,21 +88,47 @@ export default function HomeScreen() {
         {/* Progress */}
         <View style={styles.progressHeader}>
           <Text style={styles.progressLabel}>Your progress</Text>
-          <Text style={styles.progressValue}>5 / 7</Text>
+          <Text style={styles.progressValue}>
+            {missionProgress.completedDays} / {activeMission.totalDays}
+          </Text>
         </View>
 
         <View style={styles.progressBackground}>
-          <View style={styles.progress} />
+          <View 
+            style={[
+              styles.progress,
+              {
+                width: `${
+                  (missionProgress.completedDays /
+                    activeMission.totalDays) *
+                  100
+                }%`,
+              },
+            ]}
+          />
         </View>
 
         <View style={styles.amountRow}>
-          <Text style={styles.amount}>₹105 saved</Text>
-          <Text style={styles.target}>Target ₹147</Text>
+          <Text style={styles.amount}>
+            ₹{activeMission.dailyAmount *
+              missionProgress.completedDays}{" "} 
+            saved
+          </Text>
+          <Text style={styles.target}>
+            Target ₹{activeMission.dailyAmount * activeMission.totalDays}
+          </Text>
         </View>
 
-        <Pressable style={styles.primaryButton}>
+        <Pressable 
+          style={styles.primaryButton}
+          onPress={() =>
+            router.push(`/mission/${activeMission.id}`)
+          }
+        >
           <Text style={styles.primaryButtonText}>
-            Continue Mission
+            {missionProgress.completedDays >= activeMission.totalDays
+              ? "View Completed Mission"
+              : "Continue Mission"}
           </Text>
         </Pressable>
       </View>
@@ -76,7 +140,9 @@ export default function HomeScreen() {
         <View style={styles.statCard}>
           <Text style={styles.statIcon}>🔥</Text>
 
-          <Text style={styles.statValue}>5</Text>
+          <Text style={styles.statValue}>
+            {missionProgress.completedDays}
+          </Text>
 
           <Text style={styles.statLabel}>Day streak</Text>
         </View>
@@ -84,7 +150,9 @@ export default function HomeScreen() {
         <View style={styles.statCard}>
           <Text style={styles.statIcon}>✦</Text>
 
-          <Text style={styles.statValue}>500</Text>
+          <Text style={styles.statValue}>
+            {missionProgress.growthPoints}
+          </Text>
 
           <Text style={styles.statLabel}>Growth points</Text>
         </View>
@@ -97,23 +165,37 @@ export default function HomeScreen() {
             <Text style={styles.eyebrow}>TODAY</Text>
 
             <Text style={styles.todayTitle}>
-              Complete today's mission
+                {missionProgress.completedDays >= activeMission.totalDays
+                  ? "Mission completed 🎉"
+                  : "Complete today's mission"}
             </Text>
           </View>
 
           <View style={styles.checkCircle}>
-            <Text style={styles.check}>✓</Text>
+            <Text style={styles.check}>
+              {missionProgress.completedDays >= activeMission.totalDays
+                ? "✓"
+                : "!"}
+            </Text>
           </View>
         </View>
 
         <Text style={styles.todayDescription}>
-          Complete today's ₹21 contribution to keep your
-          streak alive.
+           {missionProgress.completedDays >= activeMission.totalDays
+              ? `You've completed all ${activeMission.totalDays} days and earned ${missionProgress.growthPoints} Growth Points.`
+              : `Complete today's ₹${activeMission.dailyAmount} contribution to keep your streak alive.`}
         </Text>
 
-        <Pressable style={styles.secondaryButton}>
+        <Pressable 
+          style={styles.secondaryButton}
+          onPress={() =>
+            router.push(`/mission/${activeMission.id}`)
+          }
+        >
           <Text style={styles.secondaryButtonText}>
-            Complete Today's Mission
+            {missionProgress.completedDays >= activeMission.totalDays
+              ? "View Mission"
+              : "Complete Today's Mission"}
           </Text>
         </Pressable>
       </View>
@@ -132,7 +214,12 @@ export default function HomeScreen() {
             better money habits.
           </Text>
 
-          <Pressable>
+          <Pressable 
+            style={styles.discoveryButton}
+            onPress={() =>
+              router.push("/missions")
+            }
+          >
             <Text style={styles.discoveryLink}>
               Explore missions →
             </Text>
@@ -144,13 +231,25 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#070B07",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loadingText: {
+    color: "#8D958E",
+    fontSize: 14,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#070B07",
   },
 
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 120,
   },
@@ -164,38 +263,48 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  profileCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#9BEA5A",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+
   greeting: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "600",
   },
 
   welcome: {
     color: "#8D958E",
     fontSize: 14,
-    marginTop: 3,
+    marginTop: 2,
   },
 
   helpButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#9BEA5A",
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-  },
-
-  helpIcon: {
-    color: "#0B160B",
-    fontSize: 14,
-    fontWeight: "800",
-    marginRight: 6,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
 
   helpText: {
     color: "#0B160B",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
+    marginLeft: 6,
   },
 
   /* Mission */
@@ -282,7 +391,6 @@ const styles = StyleSheet.create({
   },
 
   progress: {
-    width: "71%",
     height: "100%",
     backgroundColor: "#9BEA5A",
     borderRadius: 10,
@@ -453,6 +561,11 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     marginTop: 5,
     marginBottom: 10,
+  },
+
+  discoveryButton: {
+    alignSelf: "flex-start",
+    marginTop: 2,
   },
 
   discoveryLink: {

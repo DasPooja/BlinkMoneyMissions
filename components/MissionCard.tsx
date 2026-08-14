@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { Mission } from "@/types/mission";
+import { useRouter } from "expo-router";
 
 type MissionCardProps = {
   mission: Mission;
@@ -11,6 +12,8 @@ export default function MissionCard({
   mission,
   variant = "available",
 }: MissionCardProps) {
+  const router = useRouter();
+
   const progress =
     mission.completedDays / mission.totalDays;
 
@@ -18,7 +21,13 @@ export default function MissionCard({
     mission.dailyAmount * mission.completedDays;
 
   return (
-    <View style={styles.card}>
+    <Pressable 
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed,
+      ]}
+      onPress={() => router.push(`/mission/${mission.id}`)}
+    >
       <View style={styles.cardHeader}>
         <View style={styles.iconContainer}>
           <Text style={styles.icon}>{mission.icon}</Text>
@@ -101,7 +110,7 @@ export default function MissionCard({
           </View>
         </View>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -113,6 +122,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#202A20",
     marginBottom: 14,
+  },
+
+  cardPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
   },
 
   cardHeader: {

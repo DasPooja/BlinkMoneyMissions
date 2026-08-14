@@ -1,16 +1,46 @@
 import MissionCard from "@/components/MissionCard";
 import { missions } from "@/data/missions";
-import { ScrollView, StyleSheet, Text } from "react-native";
-
+import { useMissionProgress } from "@/hooks/useMissionProgress";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 export default function MissionsScreen() {
   const activeMission = missions.find(
     (mission) => mission.status === "active"
   );
 
+  const {
+    progress: missionProgress,
+    isLoading,
+  } = useMissionProgress(
+    activeMission?.id ?? "",
+    activeMission?.totalDays ?? 0
+  );
+
+  const activeMissionWithProgress = activeMission
+    ? {
+        ...activeMission,
+        completedDays: missionProgress.completedDays,
+      }
+    : null;
+
   const availableMissions = missions.filter(
     (mission) => mission.status === "available"
   );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>
+          Loading missions...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -18,7 +48,9 @@ export default function MissionsScreen() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.eyebrow}>MONEY MISSIONS</Text>
+      <Text style={styles.eyebrow}>
+        MONEY MISSIONS
+      </Text>
 
       <Text style={styles.title}>
         Build your wealth,
@@ -27,28 +59,34 @@ export default function MissionsScreen() {
       </Text>
 
       <Text style={styles.description}>
-        Complete simple challenges, build consistency and earn
-        rewards.
+        Complete simple challenges, build consistency and
+        earn rewards.
       </Text>
 
       {activeMission && (
         <>
-          <Text style={styles.sectionTitle}>Active</Text>
+          <Text style={styles.sectionTitle}>
+            Active
+          </Text>
 
+          {activeMissionWithProgress && (
             <MissionCard
-                mission={activeMission}
-                variant="active"
+              mission={activeMissionWithProgress}
+              variant="active"
             />
+          )}
         </>
       )}
 
-      <Text style={styles.sectionTitle}>Available</Text>
+      <Text style={styles.sectionTitle}>
+        Available
+      </Text>
 
       {availableMissions.map((mission) => (
         <MissionCard
-            key={mission.id}
-            mission={mission}
-            variant="available"
+          key={mission.id}
+          mission={mission}
+          variant="available"
         />
       ))}
     </ScrollView>
@@ -56,13 +94,25 @@ export default function MissionsScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#070B07",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loadingText: {
+    color: "#8D958E",
+    fontSize: 14,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#070B07",
   },
 
   content: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 110,
   },
