@@ -1,13 +1,13 @@
+import { useFocusEffect } from "expo-router";
 import {
-    useCallback,
-    useEffect,
-    useState,
+  useCallback,
+  useState,
 } from "react";
 
 import {
-    getMissionProgress,
-    saveMissionProgress,
-    StoredMissionProgress,
+  getMissionProgress,
+  saveMissionProgress,
+  StoredMissionProgress,
 } from "@/utils/storage";
 
 const DEFAULT_PROGRESS: StoredMissionProgress = {
@@ -42,9 +42,11 @@ export function useMissionProgress(
     setIsLoading(false);
   }, [missionId]);
 
-  useEffect(() => {
-    loadProgress();
-  }, [loadProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      loadProgress();
+    }, [loadProgress])
+  );
 
   const completeDay = async () => {
     if (progress.completedDays >= totalDays) {
