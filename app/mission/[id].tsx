@@ -1,11 +1,17 @@
+import { useEffect } from "react";
 import {
-    Pressable,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    View,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -16,7 +22,7 @@ export default function MissionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const router = useRouter();
-
+  
   const missionId = Array.isArray(id) ? id[0] : id;
 
   const mission = missions.find(
@@ -28,6 +34,26 @@ export default function MissionDetailsScreen() {
     isLoading,
     completeDay,
   } = useMissionProgress(missionId, mission?.totalDays ?? 0);
+
+  // const progress =
+  //   missionProgress.completedDays / mission.totalDays;
+  const progress = mission
+  ? missionProgress.completedDays / mission.totalDays
+  : 0;
+
+  const animatedProgress = useSharedValue(progress);
+
+  useEffect(() => {
+    animatedProgress.value = withTiming(progress, {
+      duration: 600,
+    });
+  }, [progress, animatedProgress]);
+
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${animatedProgress.value * 100}%`,
+    };
+  });
 
   const handleShareAchievement = async () => {
     try {
@@ -76,9 +102,6 @@ export default function MissionDetailsScreen() {
       </View>
     );
   }
-
-  const progress =
-    missionProgress.completedDays / mission.totalDays;
 
   const savedAmount =
     mission.dailyAmount * missionProgress.completedDays;
@@ -146,12 +169,10 @@ export default function MissionDetailsScreen() {
         </View>
 
         <View style={styles.progressBackground}>
-          <View
+          <Animated.View
             style={[
               styles.progress,
-              {
-                width: `${progress * 100}%`,
-              },
+              animatedProgressStyle,
             ]}
           />
         </View>
