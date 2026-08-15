@@ -1,4 +1,7 @@
-import { useEffect } from "react";
+import {
+  useEffect, useRef,
+  useState,
+} from "react";
 import {
   Pressable,
   ScrollView,
@@ -22,6 +25,11 @@ export default function MissionDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const router = useRouter();
+
+  const [displayedPoints, setDisplayedPoints] =
+    useState(0);
+
+  const pointsInitialized = useRef(false);
   
   const missionId = Array.isArray(id) ? id[0] : id;
 
@@ -35,8 +43,64 @@ export default function MissionDetailsScreen() {
     completeDay,
   } = useMissionProgress(missionId, mission?.totalDays ?? 0);
 
-  // const progress =
-  //   missionProgress.completedDays / mission.totalDays;
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    const targetPoints =
+      missionProgress.growthPoints;
+
+    if (!pointsInitialized.current) {
+      pointsInitialized.current = true;
+      setDisplayedPoints(targetPoints);
+      return;
+    }
+
+    const startPoints = displayedPoints;
+    const difference = targetPoints - startPoints;
+
+    if (difference === 0) {
+      return;
+    }
+
+    const duration = 500;
+    const startTime = Date.now();
+
+    let animationFrame: number;
+
+    const animatePoints = () => {
+      const elapsed = Date.now() - startTime;
+      const animationProgress = Math.min(
+        elapsed / duration,
+        1
+      );
+
+      const currentValue =
+        startPoints +
+        difference * animationProgress;
+
+      setDisplayedPoints(
+        Math.round(currentValue)
+      );
+
+      if (animationProgress < 1) {
+        animationFrame =
+          requestAnimationFrame(animatePoints);
+      }
+    };
+
+    animationFrame =
+      requestAnimationFrame(animatePoints);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [
+    missionProgress.growthPoints,
+    isLoading,
+  ]);
+
   const progress = mission
   ? missionProgress.completedDays / mission.totalDays
   : 0;
@@ -49,11 +113,13 @@ export default function MissionDetailsScreen() {
     });
   }, [progress, animatedProgress]);
 
+
   const animatedProgressStyle = useAnimatedStyle(() => {
     return {
       width: `${animatedProgress.value * 100}%`,
     };
   });
+
 
   const handleShareAchievement = async () => {
     try {
@@ -260,9 +326,9 @@ export default function MissionDetailsScreen() {
             <View style={styles.statCard}>
                 <Text style={styles.statIcon}>✦</Text>
 
-                <Text style={styles.statValue}>
-                {missionProgress.growthPoints}
-                </Text>
+              <Text style={styles.statValue}>
+                {displayedPoints}
+              </Text>
 
                 <Text style={styles.statLabel}>
                 Growth points
@@ -558,6 +624,7 @@ const styles = StyleSheet.create({
         color: "#9FE870",
         fontSize: 28,
         fontWeight: "700",
+        padding: 0,
     },
 
     statLabel: {
